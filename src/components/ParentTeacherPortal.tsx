@@ -267,7 +267,11 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
               </div>
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto">
-              {relevantMessages.map((msg) => (
+              {relevantMessages.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                  Aucun message pour le moment. Envoyez un premier message et répondez depuis le portail du parent, professeur ou directeur.
+                </div>
+              ) : relevantMessages.map((msg) => (
                 <div
                   key={msg.id}
                   className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'}`}

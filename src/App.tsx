@@ -177,7 +177,7 @@ export default function App() {
   };
 
   const getInitialTabForRole = (role: UserRole): AppTabKey => {
-    if (role === 'PARENT' || role === 'TEACHER') {
+    if (role === 'PARENT' || role === 'TEACHER' || role === 'SCHOOL_ADMIN') {
       return 'portal';
     }
     if (role === 'ACCOUNTANT') {
@@ -189,6 +189,9 @@ export default function App() {
   const getAvailableTabs = (role: UserRole): AppTabKey[] => {
     if (role === 'PARENT' || role === 'TEACHER') {
       return ['portal'];
+    }
+    if (role === 'SCHOOL_ADMIN') {
+      return ['erp', 'finance', 'portal'];
     }
     if (role === 'ACCOUNTANT') {
       return ['finance'];
