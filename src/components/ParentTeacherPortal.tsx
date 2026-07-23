@@ -6,6 +6,8 @@ interface Message {
   id: string;
   senderRole: UserRole;
   senderName: string;
+  recipientRole: UserRole;
+  recipientName: string;
   content: string;
   timestamp: string;
 }
@@ -44,11 +46,14 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
     stu_004: 'PRESENT'
   });
 
+  const [messageRecipient, setMessageRecipient] = useState<'TEACHER' | 'SCHOOL_ADMIN'>('TEACHER');
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'msg_001',
       senderRole: 'PARENT',
       senderName: 'Mme Mukanya',
+      recipientRole: 'TEACHER',
+      recipientName: 'M. Lukusa',
       content: 'Bonjour, pouvez-vous m’envoyer la note de Nathan pour le dernier devoir ?',
       timestamp: '2026-07-20 08:43'
     },
@@ -56,8 +61,19 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
       id: 'msg_002',
       senderRole: 'TEACHER',
       senderName: 'M. Lukusa',
+      recipientRole: 'PARENT',
+      recipientName: 'Mme Mukanya',
       content: 'Bonjour Mme Mukanya, la note est 15/20 et le devoir est disponible dans le cahier de texte.',
       timestamp: '2026-07-20 09:05'
+    },
+    {
+      id: 'msg_003',
+      senderRole: 'SCHOOL_ADMIN',
+      senderName: 'M. MUKENDI Alain',
+      recipientRole: 'PARENT',
+      recipientName: 'Mme Mukanya',
+      content: 'Je vous invite à la réunion des parents jeudi prochain à 15h.',
+      timestamp: '2026-07-21 10:20'
     }
   ]);
   const [messageText, setMessageText] = useState('');
@@ -66,10 +82,19 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
     e.preventDefault();
     if (!messageText.trim()) return;
 
+    const recipientRole = role === 'PARENT' ? messageRecipient : 'PARENT';
+    const recipientName = recipientRole === 'TEACHER'
+      ? 'M. Lukusa'
+      : recipientRole === 'SCHOOL_ADMIN'
+      ? 'M. MUKENDI Alain'
+      : 'Parent';
+
     const newMessage: Message = {
       id: `msg_${Date.now()}`,
       senderRole: role,
-      senderName: role === 'PARENT' ? 'Parent' : 'Professeur',
+      senderName: role === 'PARENT' ? 'Parent' : role === 'TEACHER' ? 'M. Lukusa' : 'M. MUKENDI Alain',
+      recipientRole,
+      recipientName,
       content: messageText.trim(),
       timestamp: new Date().toLocaleString('fr-FR', {
         year: 'numeric',
@@ -204,20 +229,34 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
 
           {/* Parent-Teacher Communication */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h4 className="font-bold text-slate-900 text-sm">Messagerie Parent ↔ Professeur</h4>
-                <p className="text-xs text-slate-500">Échangez directement avec les enseignants sans voir les informations de direction.</p>
+                <h4 className="font-bold text-slate-900 text-sm">Messagerie Parent ↔ Équipe scolaire</h4>
+                <p className="text-xs text-slate-500">Choisissez le directeur ou le professeur, puis envoyez votre message.</p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <label className="text-xs font-semibold text-slate-500">Destinataire</label>
+                <select
+                  value={messageRecipient}
+                  onChange={(e) => setMessageRecipient(e.target.value as 'TEACHER' | 'SCHOOL_ADMIN')}
+                  className="rounded-2xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 text-sm focus:border-emerald-500 focus:outline-none"
+                >
+                  <option value="TEACHER">Professeur</option>
+                  <option value="SCHOOL_ADMIN">Directeur</option>
+                </select>
               </div>
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto">
-              {messages.map((msg) => (
+              {messages.filter((msg) => msg.senderRole === 'PARENT' || msg.recipientRole === 'PARENT').map((msg) => (
                 <div
                   key={msg.id}
                   className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'}`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="font-semibold">{msg.senderName}</span>
+                    <div className="space-y-1">
+                      <div className="font-semibold">{msg.senderRole === 'PARENT' ? 'Vous' : msg.senderName}</div>
+                      <div className="text-[10px] text-slate-400">À : {msg.recipientName}</div>
+                    </div>
                     <span className="text-[10px] text-slate-500">{msg.timestamp}</span>
                   </div>
                   <p>{msg.content}</p>
@@ -229,7 +268,7 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 rows={3}
-                placeholder="Écrire un message au professeur..."
+                placeholder="Écrire un message au professeur ou au directeur..."
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               />
               <button
