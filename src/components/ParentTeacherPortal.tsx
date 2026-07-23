@@ -11,6 +11,7 @@ interface ParentTeacherPortalProps {
   onAddPayment: (payment: Omit<Payment, 'id' | 'qrCodeUrl' | 'securityHash' | 'syncStatus'>) => void;
   messages: Message[];
   onSendMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
+  currentUserName: string;
 }
 
 export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
@@ -21,7 +22,8 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
   payments,
   onAddPayment,
   messages,
-  onSendMessage
+  onSendMessage,
+  currentUserName
 }) => {
   const [selectedStudent, setSelectedStudent] = useState<Student>(students[0]);
   const isParent = role === 'PARENT';
@@ -50,15 +52,34 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
 
   const [messageRecipient, setMessageRecipient] = useState<'TEACHER' | 'SCHOOL_ADMIN'>('TEACHER');
   const [messageText, setMessageText] = useState('');
+  const parentOptions = Array.from(new Set(students.map((student) => student.parentName)));
+  const [selectedParentName, setSelectedParentName] = useState<string>(parentOptions[0] || 'Parent');
+  const currentParentName = isParent ? selectedStudent.parentName : selectedParentName;
+
+  const conversationTitle = isParent
+    ? `Conversation ${currentParentName} ↔ ${messageRecipient === 'TEACHER' ? 'Professeur' : 'Directeur'}`
+    : isTeacher
+    ? `Conversation Professeur ↔ ${selectedParentName}`
+    : `Conversation Directeur ↔ ${selectedParentName}`;
+
   const relevantMessages = messages.filter((msg) => {
     if (isParent) {
-      return msg.senderRole === 'PARENT' || msg.recipientRole === 'PARENT';
+      return (
+        (msg.senderRole === 'PARENT' && msg.senderName === currentParentName) ||
+        (msg.recipientRole === 'PARENT' && msg.recipientName === currentParentName)
+      );
     }
     if (isTeacher) {
-      return msg.senderRole === 'TEACHER' || msg.recipientRole === 'TEACHER';
+      return (
+        ((msg.senderRole === 'TEACHER' && msg.recipientRole === 'PARENT') || (msg.senderRole === 'PARENT' && msg.recipientRole === 'TEACHER')) &&
+        (msg.senderName === selectedParentName || msg.recipientName === selectedParentName)
+      );
     }
     if (isSchoolAdmin) {
-      return msg.senderRole === 'SCHOOL_ADMIN' || msg.recipientRole === 'SCHOOL_ADMIN';
+      return (
+        ((msg.senderRole === 'SCHOOL_ADMIN' && msg.recipientRole === 'PARENT') || (msg.senderRole === 'PARENT' && msg.recipientRole === 'SCHOOL_ADMIN')) &&
+        (msg.senderName === selectedParentName || msg.recipientName === selectedParentName)
+      );
     }
     return false;
   });
@@ -72,11 +93,11 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
       ? 'M. Lukusa'
       : recipientRole === 'SCHOOL_ADMIN'
       ? 'M. MUKENDI Alain'
-      : 'Parent';
+      : currentParentName;
 
     onSendMessage({
       senderRole: role,
-      senderName: role === 'PARENT' ? 'Parent' : role === 'TEACHER' ? 'M. Lukusa' : 'M. MUKENDI Alain',
+      senderName: role === 'PARENT' ? currentParentName : role === 'TEACHER' ? 'M. Lukusa' : 'M. MUKENDI Alain',
       recipientRole,
       recipientName,
       content: messageText.trim()
@@ -206,25 +227,27 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h4 className="font-bold text-slate-900 text-sm">Messagerie Parent ↔ Équipe scolaire</h4>
-                <p className="text-xs text-slate-500">Choisissez le directeur ou le professeur, puis envoyez votre message.</p>
+                <h4 className="font-bold text-slate-900 text-sm">{conversationTitle}</h4>
+                <p className="text-xs text-slate-500">Affiche les échanges entre parents et {isParent ? 'l’équipe scolaire' : isTeacher ? 'vous en tant que professeur' : 'vous en tant que directeur'}.</p>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <label className="text-xs font-semibold text-slate-500">Destinataire</label>
-                <select
-                  value={messageRecipient}
-                  onChange={(e) => setMessageRecipient(e.target.value as 'TEACHER' | 'SCHOOL_ADMIN')}
-                  className="rounded-2xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 text-sm focus:border-emerald-500 focus:outline-none"
-                >
-                  <option value="TEACHER">Professeur</option>
-                  <option value="SCHOOL_ADMIN">Directeur</option>
-                </select>
-              </div>
+              {isParent && (
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <label className="text-xs font-semibold text-slate-500">Destinataire</label>
+                  <select
+                    value={messageRecipient}
+                    onChange={(e) => setMessageRecipient(e.target.value as 'TEACHER' | 'SCHOOL_ADMIN')}
+                    className="rounded-2xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 text-sm focus:border-emerald-500 focus:outline-none"
+                  >
+                    <option value="TEACHER">Professeur</option>
+                    <option value="SCHOOL_ADMIN">Directeur</option>
+                  </select>
+                </div>
+              )}
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto">
               {relevantMessages.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                  Aucun message pour le moment. Envoyez un premier message et répondez depuis le portail du parent, professeur ou directeur.
+                  Aucun message pour le moment. Envoyez un premier message pour démarrer la conversation.
                 </div>
               ) : relevantMessages.map((msg) => (
                 <div
@@ -233,7 +256,7 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="space-y-1">
-                      <div className="font-semibold">{msg.senderRole === 'PARENT' ? 'Vous' : msg.senderName}</div>
+                      <div className="font-semibold">{msg.senderRole === 'PARENT' ? (isParent ? 'Vous' : msg.senderName) : msg.senderName}</div>
                       <div className="text-[10px] text-slate-400">À : {msg.recipientName}</div>
                     </div>
                     <span className="text-[10px] text-slate-500">{msg.timestamp}</span>
@@ -350,14 +373,30 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h4 className="font-bold text-slate-900 text-sm">Messagerie {isTeacher ? 'Enseignant' : 'Directeur'} ↔ Parent</h4>
                 <p className="text-xs text-slate-500">Envoyez des notes aux parents ou répondez à leurs messages depuis votre espace {isTeacher ? 'professeur' : 'directeur'}.</p>
               </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <label className="text-xs font-semibold text-slate-500">Parent</label>
+                <select
+                  value={selectedParentName}
+                  onChange={(e) => setSelectedParentName(e.target.value)}
+                  className="rounded-2xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 text-sm focus:border-indigo-500 focus:outline-none"
+                >
+                  {parentOptions.map((parent) => (
+                    <option key={parent} value={parent}>{parent}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto">
-              {relevantMessages.map((msg) => (
+              {relevantMessages.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                  Aucun message pour le moment avec {selectedParentName}. Envoyez un premier message pour démarrer la conversation.
+                </div>
+              ) : relevantMessages.map((msg) => (
                 <div
                   key={msg.id}
                   className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'TEACHER' ? 'bg-indigo-50 border border-indigo-200 text-slate-900' : msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'}`}

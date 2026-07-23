@@ -207,8 +207,12 @@ export default function App() {
   };
 
   const handleSendMessage = (newMessageData: Omit<Message, 'id' | 'timestamp'>) => {
+    const senderName = newMessageData.senderRole === 'PARENT'
+      ? (newMessageData.senderName || loggedInUser || 'Parent')
+      : newMessageData.senderName;
     const newMessage: Message = {
       ...newMessageData,
+      senderName,
       id: `msg_${Date.now()}`,
       timestamp: new Date().toLocaleString('fr-FR', {
         year: 'numeric',
@@ -537,6 +541,7 @@ export default function App() {
             onAddPayment={handleAddPayment}
             messages={messages}
             onSendMessage={handleSendMessage}
+            currentUserName={loggedInUser}
           />
         )}
       </main>
