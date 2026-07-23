@@ -321,6 +321,12 @@ export default function App() {
         networkStatus={networkStatus}
         onToggleNetwork={handleToggleNetwork}
         currentRole={currentRole}
+        activeTab={activeTab}
+        availableTabs={getAvailableTabs(currentRole)}
+        onChangeTab={setActiveTab}
+        onLogout={handleLogout}
+        onVerifyReceiptModal={() => handleOpenVerifyModal()}
+      />
 
       {/* Main Active Tab Content View */}
       <main className="pb-16">
