@@ -84,19 +84,19 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
       timestamp: '2026-07-21 10:20'
     }
   ]);
+  const [messageText, setMessageText] = useState('');
   const relevantMessages = messages.filter((msg) => {
     if (isParent) {
       return msg.senderRole === 'PARENT' || msg.recipientRole === 'PARENT';
     }
     if (isTeacher) {
-      return msg.senderRole === 'TEACHER' || msg.recipientRole === 'TEACHER' || (msg.senderRole === 'PARENT' && msg.recipientRole === 'TEACHER');
+      return msg.senderRole === 'TEACHER' || msg.recipientRole === 'TEACHER';
     }
     if (isSchoolAdmin) {
-      return msg.senderRole === 'SCHOOL_ADMIN' || msg.recipientRole === 'SCHOOL_ADMIN' || (msg.senderRole === 'PARENT' && msg.recipientRole === 'SCHOOL_ADMIN');
+      return msg.senderRole === 'SCHOOL_ADMIN' || msg.recipientRole === 'SCHOOL_ADMIN';
     }
     return false;
   });
-  const [messageText, setMessageText] = useState('');
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
