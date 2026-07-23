@@ -32,6 +32,14 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
   const [selectedStudent, setSelectedStudent] = useState<Student>(students[0]);
   const isParent = role === 'PARENT';
   const isTeacher = role === 'TEACHER';
+  const isSchoolAdmin = role === 'SCHOOL_ADMIN';
+
+  const getDisplayRoleName = (userRole: UserRole) => {
+    if (userRole === 'PARENT') return 'Parent';
+    if (userRole === 'TEACHER') return 'Professeur';
+    if (userRole === 'SCHOOL_ADMIN') return 'Directeur';
+    return userRole;
+  };
 
   // Teacher Class Diary State
   const [lessonTopic, setLessonTopic] = useState('Résolution d\'équations du 2nd degré');
@@ -76,6 +84,18 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
       timestamp: '2026-07-21 10:20'
     }
   ]);
+  const relevantMessages = messages.filter((msg) => {
+    if (isParent) {
+      return msg.senderRole === 'PARENT' || msg.recipientRole === 'PARENT';
+    }
+    if (isTeacher) {
+      return msg.senderRole === 'TEACHER' || msg.recipientRole === 'TEACHER' || (msg.senderRole === 'PARENT' && msg.recipientRole === 'TEACHER');
+    }
+    if (isSchoolAdmin) {
+      return msg.senderRole === 'SCHOOL_ADMIN' || msg.recipientRole === 'SCHOOL_ADMIN' || (msg.senderRole === 'PARENT' && msg.recipientRole === 'SCHOOL_ADMIN');
+    }
+    return false;
+  });
   const [messageText, setMessageText] = useState('');
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -247,7 +267,7 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
               </div>
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto">
-              {messages.filter((msg) => msg.senderRole === 'PARENT' || msg.recipientRole === 'PARENT').map((msg) => (
+              {relevantMessages.map((msg) => (
                 <div
                   key={msg.id}
                   className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'}`}
@@ -282,7 +302,7 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
         </div>
       )}
 
-      {isTeacher && (
+      {(isTeacher || isSchoolAdmin) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Roll Call / Attendance Marker */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
@@ -373,18 +393,21 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-bold text-slate-900 text-sm">Messagerie Enseignant ↔ Parent</h4>
-                <p className="text-xs text-slate-500">Envoyez des notes aux parents ou répondez à leurs messages depuis votre espace professeur.</p>
+                <h4 className="font-bold text-slate-900 text-sm">Messagerie {isTeacher ? 'Enseignant' : 'Directeur'} ↔ Parent</h4>
+                <p className="text-xs text-slate-500">Envoyez des notes aux parents ou répondez à leurs messages depuis votre espace {isTeacher ? 'professeur' : 'directeur'}.</p>
               </div>
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto">
-              {messages.map((msg) => (
+              {relevantMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'TEACHER' ? 'bg-indigo-50 border border-indigo-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'}`}
+                  className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'TEACHER' ? 'bg-indigo-50 border border-indigo-200 text-slate-900' : msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'}`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="font-semibold">{msg.senderName}</span>
+                    <div className="space-y-1">
+                      <div className="font-semibold">{msg.senderRole === 'PARENT' ? 'Parent' : msg.senderName}</div>
+                      <div className="text-[10px] text-slate-400">À : {msg.recipientName}</div>
+                    </div>
                     <span className="text-[10px] text-slate-500">{msg.timestamp}</span>
                   </div>
                   <p>{msg.content}</p>
@@ -410,10 +433,10 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
         </div>
       )}
 
-      {!isParent && !isTeacher && (
+      {!isParent && !isTeacher && !isSchoolAdmin && (
         <div className="bg-white border border-rose-200 rounded-2xl p-6 shadow-sm text-slate-900">
           <h4 className="font-bold text-lg">Accès non autorisé</h4>
-          <p className="mt-2 text-sm text-slate-600">Ce portail est réservé aux parents et aux enseignants. Veuillez vous connecter avec le rôle approprié.</p>
+          <p className="mt-2 text-sm text-slate-600">Ce portail est réservé aux parents, enseignants et au directeur. Veuillez vous connecter avec le rôle approprié.</p>
         </div>
       )}
     </div>
