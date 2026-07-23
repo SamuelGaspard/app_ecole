@@ -1,0 +1,8 @@
+{
+  "name": "Remix: APP ECOLE - Solution de Gestion Scolaire Hybride",
+  "description": "Système ERP Scolaire SaaS Multi-Tenant \u0026 Offline-First avec Caisse POS, Bulletins PDF, Site Vitrine et Vérification Anti-Fraude par QR Code.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
