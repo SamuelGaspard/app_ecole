@@ -32,6 +32,16 @@ export default function App() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [registerFullName, setRegisterFullName] = useState('');
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
+  const [authMessage, setAuthMessage] = useState('');
+  const [loggedInUser, setLoggedInUser] = useState('');
+  const [parentAccounts, setParentAccounts] = useState<Array<{ email: string; password: string; fullName: string }>>([
+    { email: 'parent@appecole.com', password: 'Parent2026', fullName: 'Parent Demo' }
+  ]);
 
   // Core ERP State
   const [students, setStudents] = useState<Student[]>(INITIAL_STUDENTS);
@@ -205,24 +215,62 @@ export default function App() {
     setActiveTab('erp');
   };
 
+  const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoginError('');
+    setAuthMessage('');
+
+    if (!registerFullName.trim() || !registerEmail.trim() || !registerPassword.trim() || !registerConfirmPassword.trim()) {
+      setLoginError('Veuillez remplir tous les champs.');
+      return;
+    }
+    if (registerPassword !== registerConfirmPassword) {
+      setLoginError('Les mots de passe ne correspondent pas.');
+      return;
+    }
+    const normalizedEmail = registerEmail.toLowerCase();
+    if (parentAccounts.some((account) => account.email === normalizedEmail)) {
+      setLoginError('Un compte avec cet email existe déjà.');
+      return;
+    }
+
+    setParentAccounts((prev) => [
+      ...prev,
+      { email: normalizedEmail, password: registerPassword, fullName: registerFullName.trim() }
+    ]);
+    setAuthMessage('Compte parent créé avec succès. Vous pouvez désormais vous connecter.');
+    setAuthMode('login');
+    setLoginRole('PARENT');
+    setLoginEmail(normalizedEmail);
+    setRegisterFullName('');
+    setRegisterEmail('');
+    setRegisterPassword('');
+    setRegisterConfirmPassword('');
+  };
+
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setAuthMessage('');
 
-    const validCredentials: Record<UserRole, { email: string; password: string }> = {
-      SUPER_ADMIN: { email: 'superadmin@appecole.com', password: 'SuperAdmin123' },
-      SCHOOL_ADMIN: { email: 'directeur@appecole.com', password: 'Directeur123' },
-      ACCOUNTANT: { email: 'comptable@appecole.com', password: 'Compta123' },
-      SECRETARY: { email: 'secretaire@appecole.com', password: 'Secr@2026' },
-      TEACHER: { email: 'enseignant@appecole.com', password: 'Prof2026' },
-      PARENT: { email: 'parent@appecole.com', password: 'Parent2026' },
-      STUDENT: { email: 'eleve@appecole.com', password: 'Eleve2026' }
+    const validCredentials: Omit<Record<UserRole, { email: string; password: string; fullName: string }>, 'PARENT'> = {
+      SUPER_ADMIN: { email: 'superadmin@appecole.com', password: 'SuperAdmin123', fullName: 'Super Admin' },
+      SCHOOL_ADMIN: { email: 'directeur@appecole.com', password: 'Directeur123', fullName: 'Directeur École' },
+      ACCOUNTANT: { email: 'comptable@appecole.com', password: 'Compta123', fullName: 'Comptable' },
+      SECRETARY: { email: 'secretaire@appecole.com', password: 'Secr@2026', fullName: 'Secrétaire' },
+      TEACHER: { email: 'enseignant@appecole.com', password: 'Prof2026', fullName: 'Enseignant' },
+      STUDENT: { email: 'eleve@appecole.com', password: 'Eleve2026', fullName: 'Élève' }
     };
 
-    const expected = validCredentials[loginRole];
-    if (loginEmail.toLowerCase() === expected.email && loginPassword === expected.password) {
+    const normalizedEmail = loginEmail.toLowerCase();
+    const expected = loginRole === 'PARENT'
+      ? parentAccounts.find((account) => account.email === normalizedEmail)
+      : validCredentials[loginRole as Exclude<UserRole, 'PARENT'>];
+
+    if (expected && normalizedEmail === expected.email && loginPassword === expected.password) {
       setIsAuthenticated(true);
       setLoginError('');
       setCurrentRole(loginRole);
+      setLoggedInUser(expected.fullName);
       setActiveTab(getInitialTabForRole(loginRole));
       return;
     }
@@ -251,53 +299,127 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-4">
         <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/95 p-8 shadow-2xl shadow-black/20">
-          <h1 className="text-3xl font-extrabold text-white mb-4">Connexion</h1>
-          <p className="text-slate-400 mb-6">Connectez-vous en tant que parent, professeur, directeur ou secrétaire.</p>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <label className="block text-sm font-semibold text-slate-300">
-              Rôle
-              <select
-                value={loginRole}
-                onChange={(e) => setLoginRole(e.target.value as UserRole)}
-                className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-emerald-400"
-              >
-                <option value="PARENT">Parent</option>
-                <option value="TEACHER">Professeur</option>
-                <option value="SCHOOL_ADMIN">Directeur</option>
-                <option value="SECRETARY">Secrétaire</option>
-                <option value="ACCOUNTANT">Comptable</option>
-              </select>
-            </label>
-            <label className="block text-sm font-semibold text-slate-300">
-              Email
-              <input
-                type="email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-emerald-400"
-                placeholder="parent@appecole.com"
-                required
-              />
-            </label>
-            <label className="block text-sm font-semibold text-slate-300">
-              Mot de passe
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-emerald-400"
-                placeholder="********"
-                required
-              />
-            </label>
-            {loginError && <div className="text-sm text-rose-400">{loginError}</div>}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-extrabold text-white">{authMode === 'login' ? 'Connexion' : 'Création de compte Parent'}</h1>
+              <p className="text-slate-400 mt-2">{authMode === 'login' ? 'Connectez-vous en tant que parent, professeur, directeur ou secrétaire.' : 'Créez un compte parent pour accéder au portail des parents.'}</p>
+            </div>
             <button
-              type="submit"
-              className="w-full rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+              type="button"
+              onClick={() => {
+                setAuthMode(authMode === 'login' ? 'register' : 'login');
+                setLoginError('');
+                setAuthMessage('');
+              }}
+              className="text-xs font-semibold uppercase tracking-wide text-emerald-300 hover:text-white"
             >
-              Se connecter
+              {authMode === 'login' ? 'Créer un compte' : 'Se connecter'}
             </button>
-          </form>
+          </div>
+
+          {authMessage && <div className="mb-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">{authMessage}</div>}
+
+          {authMode === 'register' ? (
+            <form onSubmit={handleRegister} className="space-y-4">
+              <label className="block text-sm font-semibold text-slate-300">
+                Nom complet
+                <input
+                  type="text"
+                  value={registerFullName}
+                  onChange={(e) => setRegisterFullName(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-emerald-400"
+                  placeholder="Jean Dupont"
+                  required
+                />
+              </label>
+              <label className="block text-sm font-semibold text-slate-300">
+                Email
+                <input
+                  type="email"
+                  value={registerEmail}
+                  onChange={(e) => setRegisterEmail(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-emerald-400"
+                  placeholder="parent@appecole.com"
+                  required
+                />
+              </label>
+              <label className="block text-sm font-semibold text-slate-300">
+                Mot de passe
+                <input
+                  type="password"
+                  value={registerPassword}
+                  onChange={(e) => setRegisterPassword(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-emerald-400"
+                  placeholder="********"
+                  required
+                />
+              </label>
+              <label className="block text-sm font-semibold text-slate-300">
+                Confirmer mot de passe
+                <input
+                  type="password"
+                  value={registerConfirmPassword}
+                  onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-emerald-400"
+                  placeholder="********"
+                  required
+                />
+              </label>
+              {loginError && <div className="text-sm text-rose-400">{loginError}</div>}
+              <button
+                type="submit"
+                className="w-full rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+              >
+                Créer mon compte
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <label className="block text-sm font-semibold text-slate-300">
+                Rôle
+                <select
+                  value={loginRole}
+                  onChange={(e) => setLoginRole(e.target.value as UserRole)}
+                  className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-emerald-400"
+                >
+                  <option value="PARENT">Parent</option>
+                  <option value="TEACHER">Professeur</option>
+                  <option value="SCHOOL_ADMIN">Directeur</option>
+                  <option value="SECRETARY">Secrétaire</option>
+                  <option value="ACCOUNTANT">Comptable</option>
+                </select>
+              </label>
+              <label className="block text-sm font-semibold text-slate-300">
+                Email
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-emerald-400"
+                  placeholder="parent@appecole.com"
+                  required
+                />
+              </label>
+              <label className="block text-sm font-semibold text-slate-300">
+                Mot de passe
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-emerald-400"
+                  placeholder="********"
+                  required
+                />
+              </label>
+              {loginError && <div className="text-sm text-rose-400">{loginError}</div>}
+              <button
+                type="submit"
+                className="w-full rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+              >
+                Se connecter
+              </button>
+            </form>
+          )}
           <div className="mt-6 text-xs text-slate-500 space-y-2">
             <p>Exemples de connexion :</p>
             <ul className="list-disc list-inside space-y-1">
