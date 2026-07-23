@@ -32,6 +32,16 @@ export interface User {
   avatarUrl?: string;
 }
 
+export interface Message {
+  id: string;
+  senderRole: UserRole;
+  senderName: string;
+  recipientRole: UserRole;
+  recipientName: string;
+  content: string;
+  timestamp: string;
+}
+
 export interface Student {
   id: string;
   schoolId: string;

@@ -10,7 +10,7 @@ import {
   INITIAL_AUDIT_LOGS,
   INITIAL_PENDING_SYNC_ITEMS
 } from './data/initialData';
-import { School, Student, Grade, Payment, AuditLog, PendingSyncItem, NetworkStatus, UserRole } from './types';
+import { School, Student, Grade, Payment, AuditLog, PendingSyncItem, NetworkStatus, UserRole, Message } from './types';
 import { Header } from './components/Header';
 import { ErpBackOffice } from './components/ErpBackOffice';
 import { FinanceCaisse } from './components/FinanceCaisse';
@@ -49,6 +49,36 @@ export default function App() {
   const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(INITIAL_AUDIT_LOGS);
   const [pendingSyncItems, setPendingSyncItems] = useState<PendingSyncItem[]>(INITIAL_PENDING_SYNC_ITEMS);
+
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'msg_001',
+      senderRole: 'PARENT',
+      senderName: 'Mme Mukanya',
+      recipientRole: 'TEACHER',
+      recipientName: 'M. Lukusa',
+      content: 'Bonjour, pouvez-vous m’envoyer la note de Nathan pour le dernier devoir ?',
+      timestamp: '2026-07-20 08:43'
+    },
+    {
+      id: 'msg_002',
+      senderRole: 'TEACHER',
+      senderName: 'M. Lukusa',
+      recipientRole: 'PARENT',
+      recipientName: 'Mme Mukanya',
+      content: 'Bonjour Mme Mukanya, la note est 15/20 et le devoir est disponible dans le cahier de texte.',
+      timestamp: '2026-07-20 09:05'
+    },
+    {
+      id: 'msg_003',
+      senderRole: 'SCHOOL_ADMIN',
+      senderName: 'M. MUKENDI Alain',
+      recipientRole: 'PARENT',
+      recipientName: 'Mme Mukanya',
+      content: 'Je vous invite à la réunion des parents jeudi prochain à 15h.',
+      timestamp: '2026-07-21 10:20'
+    }
+  ]);
 
   // Verification Modal State
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
@@ -174,6 +204,21 @@ export default function App() {
   const handleOpenVerifyModal = (receiptId?: string) => {
     if (receiptId) setVerifyReceiptId(receiptId);
     setIsVerifyModalOpen(true);
+  };
+
+  const handleSendMessage = (newMessageData: Omit<Message, 'id' | 'timestamp'>) => {
+    const newMessage: Message = {
+      ...newMessageData,
+      id: `msg_${Date.now()}`,
+      timestamp: new Date().toLocaleString('fr-FR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    };
+    setMessages((prev) => [...prev, newMessage]);
   };
 
   const getInitialTabForRole = (role: UserRole): AppTabKey => {
@@ -490,6 +535,8 @@ export default function App() {
             grades={grades}
             payments={payments}
             onAddPayment={handleAddPayment}
+            messages={messages}
+            onSendMessage={handleSendMessage}
           />
         )}
       </main>

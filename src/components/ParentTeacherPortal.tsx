@@ -1,16 +1,6 @@
 import React, { useState } from 'react';
-import { School, Student, Grade, Payment, UserRole } from '../types';
+import { School, Student, Grade, Payment, UserRole, Message } from '../types';
 import { Users, GraduationCap, CheckCircle2, Clock, AlertCircle, DollarSign, Calendar, BookOpen, Send } from 'lucide-react';
-
-interface Message {
-  id: string;
-  senderRole: UserRole;
-  senderName: string;
-  recipientRole: UserRole;
-  recipientName: string;
-  content: string;
-  timestamp: string;
-}
 
 interface ParentTeacherPortalProps {
   role: UserRole;
@@ -19,6 +9,8 @@ interface ParentTeacherPortalProps {
   grades: Grade[];
   payments: Payment[];
   onAddPayment: (payment: Omit<Payment, 'id' | 'qrCodeUrl' | 'securityHash' | 'syncStatus'>) => void;
+  messages: Message[];
+  onSendMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
 }
 
 export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
@@ -27,7 +19,9 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
   students,
   grades,
   payments,
-  onAddPayment
+  onAddPayment,
+  messages,
+  onSendMessage
 }) => {
   const [selectedStudent, setSelectedStudent] = useState<Student>(students[0]);
   const isParent = role === 'PARENT';
@@ -55,35 +49,6 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
   });
 
   const [messageRecipient, setMessageRecipient] = useState<'TEACHER' | 'SCHOOL_ADMIN'>('TEACHER');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'msg_001',
-      senderRole: 'PARENT',
-      senderName: 'Mme Mukanya',
-      recipientRole: 'TEACHER',
-      recipientName: 'M. Lukusa',
-      content: 'Bonjour, pouvez-vous m’envoyer la note de Nathan pour le dernier devoir ?',
-      timestamp: '2026-07-20 08:43'
-    },
-    {
-      id: 'msg_002',
-      senderRole: 'TEACHER',
-      senderName: 'M. Lukusa',
-      recipientRole: 'PARENT',
-      recipientName: 'Mme Mukanya',
-      content: 'Bonjour Mme Mukanya, la note est 15/20 et le devoir est disponible dans le cahier de texte.',
-      timestamp: '2026-07-20 09:05'
-    },
-    {
-      id: 'msg_003',
-      senderRole: 'SCHOOL_ADMIN',
-      senderName: 'M. MUKENDI Alain',
-      recipientRole: 'PARENT',
-      recipientName: 'Mme Mukanya',
-      content: 'Je vous invite à la réunion des parents jeudi prochain à 15h.',
-      timestamp: '2026-07-21 10:20'
-    }
-  ]);
   const [messageText, setMessageText] = useState('');
   const relevantMessages = messages.filter((msg) => {
     if (isParent) {
@@ -109,23 +74,13 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
       ? 'M. MUKENDI Alain'
       : 'Parent';
 
-    const newMessage: Message = {
-      id: `msg_${Date.now()}`,
+    onSendMessage({
       senderRole: role,
       senderName: role === 'PARENT' ? 'Parent' : role === 'TEACHER' ? 'M. Lukusa' : 'M. MUKENDI Alain',
       recipientRole,
       recipientName,
-      content: messageText.trim(),
-      timestamp: new Date().toLocaleString('fr-FR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    };
-
-    setMessages(prev => [...prev, newMessage]);
+      content: messageText.trim()
+    });
     setMessageText('');
   };
 
