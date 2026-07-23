@@ -18,12 +18,14 @@ import { ParentTeacherPortal } from './components/ParentTeacherPortal';
 import { PublicShowcase } from './components/PublicShowcase';
 import { ReceiptVerifyModal } from './components/ReceiptVerifyModal';
 
+type AppTabKey = 'erp' | 'finance' | 'portal';
+
 export default function App() {
   const [schools, setSchools] = useState<School[]>(INITIAL_SCHOOLS);
   const [currentSchool, setCurrentSchool] = useState<School>(INITIAL_SCHOOLS[0]);
   const [networkStatus, setNetworkStatus] = useState<NetworkStatus>('ONLINE_CLOUD');
   const [currentRole, setCurrentRole] = useState<UserRole>('SCHOOL_ADMIN');
-  const [activeTab, setActiveTab] = useState<'erp' | 'finance' | 'portal'>('erp');
+  const [activeTab, setActiveTab] = useState<AppTabKey>('erp');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [loginRole, setLoginRole] = useState<UserRole>('SCHOOL_ADMIN');
@@ -164,27 +166,27 @@ export default function App() {
     setIsVerifyModalOpen(true);
   };
 
-  const getInitialTabForRole = (role: UserRole) => {
+  const getInitialTabForRole = (role: UserRole): AppTabKey => {
     if (role === 'PARENT' || role === 'TEACHER') {
-      return 'portal' as const;
+      return 'portal';
     }
     if (role === 'ACCOUNTANT') {
-      return 'finance' as const;
+      return 'finance';
     }
-    return 'erp' as const;
+    return 'erp';
   };
 
-  const getAvailableTabs = (role: UserRole) => {
+  const getAvailableTabs = (role: UserRole): AppTabKey[] => {
     if (role === 'PARENT' || role === 'TEACHER') {
-      return ['portal'] as const;
+      return ['portal'];
     }
     if (role === 'ACCOUNTANT') {
-      return ['finance'] as const;
+      return ['finance'];
     }
     if (role === 'SECRETARY') {
-      return ['erp'] as const;
+      return ['erp'];
     }
-    return ['erp', 'finance'] as const;
+    return ['erp', 'finance'];
   };
 
   const handleStartLogin = () => {
