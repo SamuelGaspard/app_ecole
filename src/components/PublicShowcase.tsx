@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+   import React, { useState } from 'react';
 import { School, FeeStructure } from '../types';
 import { Globe, GraduationCap, Calendar, CheckCircle2, Phone, Mail, MapPin, Award, BookOpen, Send, Sparkles } from 'lucide-react';
 
@@ -42,20 +42,6 @@ export const PublicShowcase: React.FC<PublicShowcaseProps> = ({
 
   return (
     <div className="bg-slate-100 min-h-screen py-6 px-4 sm:px-6 lg:px-8">
-      {/* Subdomain URL Simulator Bar */}
-      <div className="max-w-6xl mx-auto mb-6 bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs text-white shadow-lg">
-        <div className="flex items-center gap-2">
-          <Globe className="w-4 h-4 text-emerald-400" />
-          <span className="text-slate-400">Site Vitrine Public Généré Automatiquement :</span>
-          <span className="font-mono text-emerald-300 font-bold bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-            https://{school.subdomain}.appecole.com
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-          <span className="text-slate-300 text-[11px]">En Ligne • SSL Crypté & Certifié</span>
-        </div>
-      </div>
 
       {/* Main Website Showcase Frame */}
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">

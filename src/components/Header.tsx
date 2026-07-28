@@ -110,18 +110,12 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Main App Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-emerald-500/20">
-            AE
-          </div>
           <div>
-            <h1 className="text-base font-extrabold tracking-tight text-white flex items-center gap-2">
-              APP ECOLE
-              <span className="text-[10px] font-medium bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">
-                {currentSchool.subdomain}.appecole.com
-              </span>
+            <h1 className="text-base font-extrabold tracking-tight text-white">
+              {currentSchool.name}
             </h1>
             <p className="text-xs text-slate-400 truncate max-w-xs sm:max-w-md">
-              {currentSchool.name} • Annee {currentSchool.academicYear}
+              Année {currentSchool.academicYear}
             </p>
           </div>
         </div>
