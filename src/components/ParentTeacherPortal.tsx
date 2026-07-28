@@ -84,6 +84,8 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
     return false;
   });
 
+  const parentMessages = relevantMessages.filter((msg) => msg.senderRole === 'PARENT');
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageText.trim()) return;
@@ -245,14 +247,14 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
               )}
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto">
-              {relevantMessages.length === 0 ? (
+              {parentMessages.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                  Aucun message pour le moment. Envoyez un premier message pour démarrer la conversation.
+                  Aucun message parent n’a encore été envoyé. Écrivez un message pour démarrer l’échange.
                 </div>
-              ) : relevantMessages.map((msg) => (
+              ) : parentMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'}`}
+                  className="rounded-2xl p-4 text-xs bg-emerald-50 border border-emerald-200 text-slate-900"
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="space-y-1">
@@ -392,14 +394,14 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
               </div>
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto">
-              {relevantMessages.length === 0 ? (
+              {parentMessages.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                  Aucun message pour le moment avec {selectedParentName}. Envoyez un premier message pour démarrer la conversation.
+                  Aucun message parent pour le moment avec {selectedParentName}. Le parent doit d’abord envoyer un message.
                 </div>
-              ) : relevantMessages.map((msg) => (
+              ) : parentMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'TEACHER' ? 'bg-indigo-50 border border-indigo-200 text-slate-900' : msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'}`}
+                  className="rounded-2xl p-4 text-xs bg-emerald-50 border border-emerald-200 text-slate-900"
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="space-y-1">
