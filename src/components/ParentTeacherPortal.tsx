@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { School, Student, Grade, Payment, UserRole, Message } from '../types';
 import { Users, GraduationCap, CheckCircle2, Clock, AlertCircle, DollarSign, Calendar, BookOpen, Send } from 'lucide-react';
 
@@ -12,6 +12,7 @@ interface ParentTeacherPortalProps {
   messages: Message[];
   onSendMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   currentUserName: string;
+  currentUserEmail: string;
 }
 
 export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
@@ -23,12 +24,21 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
   onAddPayment,
   messages,
   onSendMessage,
-  currentUserName
+  currentUserName,
+  currentUserEmail
 }) => {
-  const [selectedStudent, setSelectedStudent] = useState<Student>(students[0]);
   const isParent = role === 'PARENT';
   const isTeacher = role === 'TEACHER';
   const isSchoolAdmin = role === 'SCHOOL_ADMIN';
+  const parentStudents = isParent
+    ? students.filter((student) =>
+        student.parentName === currentUserName ||
+        (currentUserEmail && student.parentEmail.toLowerCase() === currentUserEmail.toLowerCase())
+      )
+    : students;
+  const [selectedStudent, setSelectedStudent] = useState<Student>(
+    parentStudents.length > 0 ? parentStudents[0] : students[0]
+  );
 
   const getDisplayRoleName = (userRole: UserRole) => {
     if (userRole === 'PARENT') return 'Parent';
@@ -55,9 +65,23 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
   const parentOptions = Array.from(new Set(students.map((student) => student.parentName)));
   const [selectedParentName, setSelectedParentName] = useState<string>(parentOptions[0] || 'Parent');
   const connectedParentName = currentUserName;
+  const selectedParentEmail = isParent
+    ? currentUserEmail
+    : students.find((student) => student.parentName === selectedParentName)?.parentEmail ?? '';
   const linkedParentName = selectedStudent.parentName;
+  const currentParentName = linkedParentName;
 
-  const currentParentName = isParent ? linkedParentName : selectedParentName;
+  useEffect(() => {
+    if (isParent) {
+      const matchedStudent = students.find((student) =>
+        (currentUserEmail && student.parentEmail.toLowerCase() === currentUserEmail.toLowerCase()) ||
+        student.parentName === currentUserName
+      );
+      if (matchedStudent) {
+        setSelectedStudent(matchedStudent);
+      }
+    }
+  }, [currentUserEmail, currentUserName, isParent, students]);
 
   const conversationTitle = isParent
     ? `Conversation ${linkedParentName} ↔ ${messageRecipient === 'TEACHER' ? 'Professeur' : 'Directeur'}`
@@ -68,20 +92,24 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
   const relevantMessages = messages.filter((msg) => {
     if (isParent) {
       return (
-        (msg.senderRole === 'PARENT' && msg.senderName === currentParentName) ||
-        (msg.recipientRole === 'PARENT' && msg.recipientName === currentParentName)
+        (msg.senderRole === 'PARENT' && ((currentUserEmail && msg.senderEmail?.toLowerCase() === currentUserEmail.toLowerCase()) || msg.senderName === currentParentName)) ||
+        (msg.recipientRole === 'PARENT' && ((currentUserEmail && msg.recipientEmail?.toLowerCase() === currentUserEmail.toLowerCase()) || msg.recipientName === currentParentName))
       );
     }
     if (isTeacher) {
       return (
-        ((msg.senderRole === 'TEACHER' && msg.recipientRole === 'PARENT') || (msg.senderRole === 'PARENT' && msg.recipientRole === 'TEACHER')) &&
-        (msg.senderName === selectedParentName || msg.recipientName === selectedParentName)
+        (
+          (msg.senderRole === 'TEACHER' && msg.recipientRole === 'PARENT' && ((selectedParentEmail && msg.recipientEmail?.toLowerCase() === selectedParentEmail.toLowerCase()) || msg.recipientName === selectedParentName)) ||
+          (msg.senderRole === 'PARENT' && msg.recipientRole === 'TEACHER' && ((selectedParentEmail && msg.senderEmail?.toLowerCase() === selectedParentEmail.toLowerCase()) || msg.senderName === selectedParentName))
+        )
       );
     }
     if (isSchoolAdmin) {
       return (
-        ((msg.senderRole === 'SCHOOL_ADMIN' && msg.recipientRole === 'PARENT') || (msg.senderRole === 'PARENT' && msg.recipientRole === 'SCHOOL_ADMIN')) &&
-        (msg.senderName === selectedParentName || msg.recipientName === selectedParentName)
+        (
+          (msg.senderRole === 'SCHOOL_ADMIN' && msg.recipientRole === 'PARENT' && ((selectedParentEmail && msg.recipientEmail?.toLowerCase() === selectedParentEmail.toLowerCase()) || msg.recipientName === selectedParentName)) ||
+          (msg.senderRole === 'PARENT' && msg.recipientRole === 'SCHOOL_ADMIN' && ((selectedParentEmail && msg.senderEmail?.toLowerCase() === selectedParentEmail.toLowerCase()) || msg.senderName === selectedParentName))
+        )
       );
     }
     return false;
@@ -102,9 +130,11 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
 
     onSendMessage({
       senderRole: role,
-      senderName: role === 'PARENT' ? currentParentName : role === 'TEACHER' ? 'M. Lukusa' : 'M. MUKENDI Alain',
+      senderName: role === 'PARENT' ? linkedParentName : role === 'TEACHER' ? 'M. Lukusa' : 'M. MUKENDI Alain',
+      senderEmail: role === 'PARENT' ? currentUserEmail : undefined,
       recipientRole,
       recipientName,
+      recipientEmail: recipientRole === 'PARENT' ? selectedParentEmail : undefined,
       content: messageText.trim()
     });
     setMessageText('');
@@ -154,7 +184,8 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
                 <div className="text-xs text-slate-400 font-bold uppercase">Enfant Sélectionné :</div>
                 <h4 className="text-lg font-black text-slate-900">{selectedStudent.firstName} {selectedStudent.lastName}</h4>
                 <div className="text-xs text-slate-500">{selectedStudent.className} • Mat: {selectedStudent.matricule}</div>
-                <div className="mt-2 text-xs text-slate-600">Compte parent utilisé : <span className="font-semibold text-slate-900">{currentParentName}</span></div>
+                <div className="mt-2 text-xs text-slate-600">Compte parent connecté : <span className="font-semibold text-slate-900">{connectedParentName || 'Parent Demo'}</span></div>
+                <div className="text-xs text-slate-600">Parent lié à l’enfant : <span className="font-semibold text-slate-900">{linkedParentName}</span></div>
               </div>
             </div>
 
@@ -163,12 +194,12 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
               <select
                 value={selectedStudent.id}
                 onChange={(e) => {
-                  const s = students.find(x => x.id === e.target.value);
+                  const s = parentStudents.find(x => x.id === e.target.value) ?? students.find(x => x.id === e.target.value);
                   if (s) setSelectedStudent(s);
                 }}
                 className="bg-slate-50 border border-slate-300 font-bold text-slate-900 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               >
-                {students.map(s => (
+                {(isParent ? parentStudents : students).map((s) => (
                   <option key={s.id} value={s.id}>{s.firstName} {s.lastName}</option>
                 ))}
               </select>

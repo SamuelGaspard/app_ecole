@@ -24,9 +24,39 @@ export default function App() {
   const [schools, setSchools] = useState<School[]>(INITIAL_SCHOOLS);
   const [currentSchool, setCurrentSchool] = useState<School>(INITIAL_SCHOOLS[0]);
   const [networkStatus, setNetworkStatus] = useState<NetworkStatus>('ONLINE_CLOUD');
-  const [currentRole, setCurrentRole] = useState<UserRole>('SCHOOL_ADMIN');
-  const [activeTab, setActiveTab] = useState<AppTabKey>('erp');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentRole, setCurrentRole] = useState<UserRole>(() => {
+    if (typeof window === 'undefined') return 'SCHOOL_ADMIN';
+    const saved = window.localStorage.getItem('appEcole_auth');
+    if (!saved) return 'SCHOOL_ADMIN';
+    try {
+      const parsed = JSON.parse(saved);
+      return parsed.currentRole || 'SCHOOL_ADMIN';
+    } catch {
+      return 'SCHOOL_ADMIN';
+    }
+  });
+  const [activeTab, setActiveTab] = useState<AppTabKey>(() => {
+    if (typeof window === 'undefined') return 'erp';
+    const saved = window.localStorage.getItem('appEcole_auth');
+    if (!saved) return 'erp';
+    try {
+      const parsed = JSON.parse(saved);
+      return parsed.activeTab || 'erp';
+    } catch {
+      return 'erp';
+    }
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = window.localStorage.getItem('appEcole_auth');
+    if (!saved) return false;
+    try {
+      const parsed = JSON.parse(saved);
+      return parsed.isAuthenticated || false;
+    } catch {
+      return false;
+    }
+  });
   const [showLogin, setShowLogin] = useState(false);
   const [loginRole, setLoginRole] = useState<UserRole>('SCHOOL_ADMIN');
   const [loginEmail, setLoginEmail] = useState('');
@@ -38,10 +68,46 @@ export default function App() {
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
   const [authMessage, setAuthMessage] = useState('');
-  const [loggedInUser, setLoggedInUser] = useState('');
-  const [parentAccounts, setParentAccounts] = useState<Array<{ email: string; password: string; fullName: string }>>([
-    { email: 'parent@appecole.com', password: 'Parent2026', fullName: 'Parent Demo' }
-  ]);
+  const [loggedInUser, setLoggedInUser] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    const saved = window.localStorage.getItem('appEcole_auth');
+    if (!saved) return '';
+    try {
+      const parsed = JSON.parse(saved);
+      return parsed.loggedInUser || '';
+    } catch {
+      return '';
+    }
+  });
+  const [loggedInUserEmail, setLoggedInUserEmail] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    const saved = window.localStorage.getItem('appEcole_auth');
+    if (!saved) return '';
+    try {
+      const parsed = JSON.parse(saved);
+      return parsed.loggedInUserEmail || '';
+    } catch {
+      return '';
+    }
+  });
+  const [parentAccounts, setParentAccounts] = useState<Array<{ email: string; password: string; fullName: string }>>(() => {
+    if (typeof window === 'undefined') {
+      return [
+        { email: 'parent@appecole.com', password: 'Parent2026', fullName: 'M. KABAMBA Augustin' },
+        { email: 'augustin.kabamba@gmail.com', password: 'Parent2026', fullName: 'M. KABAMBA Augustin' },
+        { email: 'fatou.bahati@yahoo.fr', password: 'Parent2026', fullName: 'Mme BAHATI Fatou' },
+        { email: 'joseph.tsise@gmail.com', password: 'Parent2026', fullName: 'M. TSISEKEDI Joseph' },
+        { email: 'm.mukenges@gmail.com', password: 'Parent2026', fullName: 'Mme MUKENGESHAYI Marie' }
+      ];
+    }
+    const saved = window.localStorage.getItem('appEcole_parentAccounts');
+    return saved ? JSON.parse(saved) : [
+      { email: 'augustin.kabamba@gmail.com', password: 'Parent2026', fullName: 'M. KABAMBA Augustin' },
+      { email: 'fatou.bahati@yahoo.fr', password: 'Parent2026', fullName: 'Mme BAHATI Fatou' },
+      { email: 'joseph.tsise@gmail.com', password: 'Parent2026', fullName: 'M. TSISEKEDI Joseph' },
+      { email: 'm.mukenges@gmail.com', password: 'Parent2026', fullName: 'Mme MUKENGESHAYI Marie' }
+    ];
+  });
 
   // Core ERP State
   const [students, setStudents] = useState<Student[]>(INITIAL_STUDENTS);
@@ -50,35 +116,122 @@ export default function App() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(INITIAL_AUDIT_LOGS);
   const [pendingSyncItems, setPendingSyncItems] = useState<PendingSyncItem[]>(INITIAL_PENDING_SYNC_ITEMS);
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'msg_001',
-      senderRole: 'PARENT',
-      senderName: 'Mme Mukanya',
-      recipientRole: 'TEACHER',
-      recipientName: 'M. Lukusa',
-      content: 'Bonjour, pouvez-vous m’envoyer la note de Nathan pour le dernier devoir ?',
-      timestamp: '2026-07-20 08:43'
-    },
-    {
-      id: 'msg_002',
-      senderRole: 'TEACHER',
-      senderName: 'M. Lukusa',
-      recipientRole: 'PARENT',
-      recipientName: 'Mme Mukanya',
-      content: 'Bonjour Mme Mukanya, la note est 15/20 et le devoir est disponible dans le cahier de texte.',
-      timestamp: '2026-07-20 09:05'
-    },
-    {
-      id: 'msg_003',
-      senderRole: 'SCHOOL_ADMIN',
-      senderName: 'M. MUKENDI Alain',
-      recipientRole: 'PARENT',
-      recipientName: 'Mme Mukanya',
-      content: 'Je vous invite à la réunion des parents jeudi prochain à 15h.',
-      timestamp: '2026-07-21 10:20'
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window === 'undefined') {
+      return [
+        {
+          id: 'msg_001',
+          senderRole: 'PARENT',
+          senderName: 'Mme Mukanya',
+          recipientRole: 'TEACHER',
+          recipientName: 'M. Lukusa',
+          content: 'Bonjour, pouvez-vous m’envoyer la note de Nathan pour le dernier devoir ?',
+          timestamp: '2026-07-20 08:43'
+        },
+        {
+          id: 'msg_002',
+          senderRole: 'TEACHER',
+          senderName: 'M. Lukusa',
+          recipientRole: 'PARENT',
+          recipientName: 'Mme Mukanya',
+          content: 'Bonjour Mme Mukanya, la note est 15/20 et le devoir est disponible dans le cahier de texte.',
+          timestamp: '2026-07-20 09:05'
+        },
+        {
+          id: 'msg_003',
+          senderRole: 'SCHOOL_ADMIN',
+          senderName: 'M. MUKENDI Alain',
+          recipientRole: 'PARENT',
+          recipientName: 'Mme Mukanya',
+          content: 'Je vous invite à la réunion des parents jeudi prochain à 15h.',
+          timestamp: '2026-07-21 10:20'
+        }
+      ];
     }
-  ]);
+
+    const saved = window.localStorage.getItem('appEcole_messages');
+    if (!saved) {
+      return [
+        {
+          id: 'msg_001',
+          senderRole: 'PARENT',
+          senderName: 'M. KABAMBA Augustin',
+          senderEmail: 'augustin.kabamba@gmail.com',
+          recipientRole: 'TEACHER',
+          recipientName: 'M. Lukusa',
+          content: 'Bonjour, pouvez-vous m’envoyer la note de Marc pour le dernier devoir ?',
+          timestamp: '2026-07-20 08:43'
+        },
+        {
+          id: 'msg_002',
+          senderRole: 'TEACHER',
+          senderName: 'M. Lukusa',
+          recipientRole: 'PARENT',
+          recipientName: 'M. KABAMBA Augustin',
+          recipientEmail: 'augustin.kabamba@gmail.com',
+          content: 'Bonjour M. KABAMBA, la note est 15/20 et le devoir est disponible dans le cahier de texte.',
+          timestamp: '2026-07-20 09:05'
+        },
+        {
+          id: 'msg_003',
+          senderRole: 'SCHOOL_ADMIN',
+          senderName: 'M. MUKENDI Alain',
+          recipientRole: 'PARENT',
+          recipientName: 'M. KABAMBA Augustin',
+          recipientEmail: 'augustin.kabamba@gmail.com',
+          content: 'Je vous invite à la réunion des parents jeudi prochain à 15h.',
+          timestamp: '2026-07-21 10:20'
+        },
+        {
+          id: 'msg_004',
+          senderRole: 'PARENT',
+          senderName: 'Mme BAHATI Fatou',
+          senderEmail: 'fatou.bahati@yahoo.fr',
+          recipientRole: 'TEACHER',
+          recipientName: 'M. Lukusa',
+          content: 'Bonjour, est-ce que le livre de français est prêt pour Aïcha ?',
+          timestamp: '2026-07-21 11:18'
+        }
+      ];
+    }
+
+    try {
+      return JSON.parse(saved) as Message[];
+    } catch {
+      return [
+        {
+          id: 'msg_001',
+          senderRole: 'PARENT',
+          senderName: 'M. KABAMBA Augustin',
+          senderEmail: 'augustin.kabamba@gmail.com',
+          recipientRole: 'TEACHER',
+          recipientName: 'M. Lukusa',
+          content: 'Bonjour, pouvez-vous m’envoyer la note de Marc pour le dernier devoir ?',
+          timestamp: '2026-07-20 08:43'
+        },
+        {
+          id: 'msg_002',
+          senderRole: 'TEACHER',
+          senderName: 'M. Lukusa',
+          recipientRole: 'PARENT',
+          recipientName: 'M. KABAMBA Augustin',
+          recipientEmail: 'augustin.kabamba@gmail.com',
+          content: 'Bonjour M. KABAMBA, la note est 15/20 et le devoir est disponible dans le cahier de texte.',
+          timestamp: '2026-07-20 09:05'
+        },
+        {
+          id: 'msg_003',
+          senderRole: 'SCHOOL_ADMIN',
+          senderName: 'M. MUKENDI Alain',
+          recipientRole: 'PARENT',
+          recipientName: 'M. KABAMBA Augustin',
+          recipientEmail: 'augustin.kabamba@gmail.com',
+          content: 'Je vous invite à la réunion des parents jeudi prochain à 15h.',
+          timestamp: '2026-07-21 10:20'
+        }
+      ];
+    }
+  });
 
   // Verification Modal State
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
@@ -206,6 +359,30 @@ export default function App() {
     setIsVerifyModalOpen(true);
   };
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('appEcole_messages', JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('appEcole_parentAccounts', JSON.stringify(parentAccounts));
+    }
+  }, [parentAccounts]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('appEcole_auth', JSON.stringify({
+        isAuthenticated,
+        currentRole,
+        activeTab,
+        loggedInUser,
+        loggedInUserEmail
+      }));
+    }
+  }, [isAuthenticated, currentRole, activeTab, loggedInUser, loggedInUserEmail]);
+
   const handleSendMessage = (newMessageData: Omit<Message, 'id' | 'timestamp'>) => {
     const senderName = newMessageData.senderRole === 'PARENT'
       ? (newMessageData.senderName || loggedInUser || 'Parent')
@@ -265,6 +442,8 @@ export default function App() {
     setLoginRole('SCHOOL_ADMIN');
     setCurrentRole('SCHOOL_ADMIN');
     setActiveTab('erp');
+    setLoggedInUser('');
+    setLoggedInUserEmail('');
   };
 
   const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
@@ -323,6 +502,7 @@ export default function App() {
       setLoginError('');
       setCurrentRole(loginRole);
       setLoggedInUser(expected.fullName);
+      setLoggedInUserEmail(loginRole === 'PARENT' ? normalizedEmail : '');
       setActiveTab(getInitialTabForRole(loginRole));
       return;
     }
@@ -542,6 +722,7 @@ export default function App() {
             messages={messages}
             onSendMessage={handleSendMessage}
             currentUserName={loggedInUser}
+            currentUserEmail={loggedInUserEmail}
           />
         )}
       </main>

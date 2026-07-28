@@ -36,8 +36,10 @@ export interface Message {
   id: string;
   senderRole: UserRole;
   senderName: string;
+  senderEmail?: string;
   recipientRole: UserRole;
   recipientName: string;
+  recipientEmail?: string;
   content: string;
   timestamp: string;
 }
