@@ -54,10 +54,13 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
   const [messageText, setMessageText] = useState('');
   const parentOptions = Array.from(new Set(students.map((student) => student.parentName)));
   const [selectedParentName, setSelectedParentName] = useState<string>(parentOptions[0] || 'Parent');
-  const currentParentName = isParent ? selectedStudent.parentName : selectedParentName;
+  const connectedParentName = currentUserName;
+  const linkedParentName = selectedStudent.parentName;
+
+  const currentParentName = isParent ? linkedParentName : selectedParentName;
 
   const conversationTitle = isParent
-    ? `Conversation ${currentParentName} ↔ ${messageRecipient === 'TEACHER' ? 'Professeur' : 'Directeur'}`
+    ? `Conversation ${linkedParentName} ↔ ${messageRecipient === 'TEACHER' ? 'Professeur' : 'Directeur'}`
     : isTeacher
     ? `Conversation Professeur ↔ ${selectedParentName}`
     : `Conversation Directeur ↔ ${selectedParentName}`;
@@ -84,7 +87,7 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
     return false;
   });
 
-  const parentMessages = relevantMessages.filter((msg) => msg.senderRole === 'PARENT');
+  const displayedMessages = relevantMessages;
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,6 +154,7 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
                 <div className="text-xs text-slate-400 font-bold uppercase">Enfant Sélectionné :</div>
                 <h4 className="text-lg font-black text-slate-900">{selectedStudent.firstName} {selectedStudent.lastName}</h4>
                 <div className="text-xs text-slate-500">{selectedStudent.className} • Mat: {selectedStudent.matricule}</div>
+                <div className="mt-2 text-xs text-slate-600">Compte parent utilisé : <span className="font-semibold text-slate-900">{currentParentName}</span></div>
               </div>
             </div>
 
@@ -247,14 +251,14 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
               )}
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto">
-              {parentMessages.length === 0 ? (
+              {displayedMessages.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                  Aucun message parent n’a encore été envoyé. Écrivez un message pour démarrer l’échange.
+                  Aucun message pour le moment. Écrivez un message ou vérifiez si le directeur ou le professeur vous a répondu.
                 </div>
-              ) : parentMessages.map((msg) => (
+              ) : displayedMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className="rounded-2xl p-4 text-xs bg-emerald-50 border border-emerald-200 text-slate-900"
+                  className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'}`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="space-y-1">
@@ -394,14 +398,14 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
               </div>
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto">
-              {parentMessages.length === 0 ? (
+              {displayedMessages.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                  Aucun message parent pour le moment avec {selectedParentName}. Le parent doit d’abord envoyer un message.
+                  Aucun message pour le moment. Écrivez un message ou vérifiez si le directeur ou le professeur vous a répondu.
                 </div>
-              ) : parentMessages.map((msg) => (
+              ) : displayedMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className="rounded-2xl p-4 text-xs bg-emerald-50 border border-emerald-200 text-slate-900"
+                  className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'}`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="space-y-1">
