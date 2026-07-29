@@ -62,6 +62,7 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
 
   const [messageRecipient, setMessageRecipient] = useState<'TEACHER' | 'SCHOOL_ADMIN'>('TEACHER');
   const [messageText, setMessageText] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const parentOptions = Array.from(new Set(students.map((student) => student.parentName)));
   const [selectedParentName, setSelectedParentName] = useState<string>(parentOptions[0] || 'Parent');
   const connectedParentName = currentUserName;
@@ -120,6 +121,7 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageText.trim()) return;
+    setIsSending(true);
 
     const recipientRole = role === 'PARENT' ? messageRecipient : 'PARENT';
     const recipientName = recipientRole === 'TEACHER'
@@ -137,7 +139,10 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
       recipientEmail: recipientRole === 'PARENT' ? selectedParentEmail : undefined,
       content: messageText.trim()
     });
+
     setMessageText('');
+    // short pop animation on the button
+    setTimeout(() => setIsSending(false), 260);
   };
 
   const handleDiarySubmit = (e: React.FormEvent) => {
@@ -289,7 +294,7 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
               ) : displayedMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'}`}
+                  className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'} slide-up`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="space-y-1">
@@ -312,7 +317,7 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
               />
               <button
                 type="submit"
-                className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white py-3 text-sm font-semibold transition"
+                className={`w-full rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white py-3 text-sm font-semibold btn-transition ${isSending ? 'pop' : ''}`}
               >
                 Envoyer le message
               </button>
@@ -436,7 +441,7 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
               ) : displayedMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'}`}
+                  className={`rounded-2xl p-4 text-xs ${msg.senderRole === 'PARENT' ? 'bg-emerald-50 border border-emerald-200 text-slate-900' : 'bg-slate-900 border border-slate-800 text-slate-100'} slide-up`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="space-y-1">
@@ -459,7 +464,7 @@ export const ParentTeacherPortal: React.FC<ParentTeacherPortalProps> = ({
               />
               <button
                 type="submit"
-                className="w-full rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white py-3 text-sm font-semibold transition"
+                className={`w-full rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white py-3 text-sm font-semibold btn-transition ${isSending ? 'pop' : ''}`}
               >
                 Envoyer au parent
               </button>
